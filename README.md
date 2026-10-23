@@ -72,9 +72,6 @@ npm test            # 自作のテストデータだけで動く
 npm run test:spec   # S1000D の配布物を使う（S1000D_SPEC_DIR で場所を指定）
 ```
 
-> [!NOTE]
-> `@shuji-bonji/s1000d-core` が npm に公開されるまでは、`package.json` の依存を `file:../../lib/s1000d-core`（s1000d-stack の配置）で参照しています。
-
 ## ライセンス
 
 MIT
