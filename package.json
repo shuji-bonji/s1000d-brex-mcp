@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/server": "^2.0.0",
-    "@shuji-bonji/s1000d-core": "^0.1.0"
+    "@shuji-bonji/s1000d-core": "^0.2.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",

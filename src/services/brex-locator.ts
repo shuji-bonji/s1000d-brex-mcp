@@ -1,23 +1,23 @@
 /**
  * BREX の所在を解決する。
  *
- * 利用者は BREX を次のどれかで指定できる。
- * - ファイルのパス（`.xml`）
- * - DMC（`DMC-` 付きでも無しでも）。環境変数とツール引数のフォルダーから探す
- * - 省略。配布物の既定 BREX（`DMC-S1000D-*-04-10-0301-00A-022A-D`）を使う
+ * 探索そのもの（ファイルのパス・DMC・省略＝配布物の既定 BREX）は s1000d-core の `locateBrex` が行う
+ * （0.2.0 で core に移した。s1000d-verify-mcp と同じ探索を共有するため）。
+ * ここに残すのは、環境変数（S1000D_SPEC_DIR / S1000D_CSDB_DIR）の解釈と、見つからなかったときの案内文だけ。
  */
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import {
+  BrexLocateError,
   createDirectoryBrexResolver,
-  isBrexDmc,
-  listDataModules,
-  parseDmc,
-  readBrex,
-  sameDmc,
+  findDefaultBrex as coreFindDefaultBrex,
+  locateBrex as coreLocateBrex,
   type BrexDocument,
   type BrexResolver,
+  type LocatedBrex,
 } from '@shuji-bonji/s1000d-core';
-import { csdbDirs, specDir } from '../config.js';
+import { ENV, csdbDirs, specDir } from '../config.js';
+
+export type { LocatedBrex };
 
 export interface LocatorOptions {
   /** ツール引数で追加されたフォルダー */
@@ -37,73 +37,36 @@ export function makeResolver(options: LocatorOptions = {}): BrexResolver {
 }
 
 /** 配布物の中の既定 BREX を探す。無ければ undefined。 */
-export function findDefaultBrex(
-  options: LocatorOptions = {},
-): { path: string; brex: BrexDocument } | undefined {
+export function findDefaultBrex(): { path: string; brex: BrexDocument } | undefined {
   const spec = specDir();
   if (!spec || !existsSync(spec)) return undefined;
-  const entries = listDataModules([spec]).filter(
-    (e) =>
-      e.name.dmCode.modelIdentCode === 'S1000D' &&
-      e.name.dmCode.systemCode === '04' &&
-      e.name.dmCode.subSystemCode === '1' &&
-      e.name.dmCode.subSubSystemCode === '0' &&
-      e.name.dmCode.assyCode === '0301' &&
-      isBrexDmc(e.name.dmCode) &&
-      e.name.issueInfo !== undefined,
-  );
-  void options;
-  // 配布物のデータ辞書には、ファイル名と中身の DMC が一致しない見本がある。
-  // 中身の DMC がファイル名と一致し、自分自身を参照しているもの（既定 BREX の性質）を優先する
-  let fallback: { path: string; brex: BrexDocument } | undefined;
-  for (const e of entries) {
-    const r = readBrex(readFileSync(e.path, 'utf8'));
-    if (!r.ok) continue;
-    const consistent = sameDmc(r.value.dmCode, e.name.dmCode);
-    const selfRef =
-      r.value.brexDmRef !== undefined && sameDmc(r.value.brexDmRef.dmCode, r.value.dmCode);
-    if (consistent && selfRef) return { path: e.path, brex: r.value };
-    fallback ??= { path: e.path, brex: r.value };
-  }
-  return fallback;
+  return coreFindDefaultBrex([spec]);
 }
 
-export interface LocatedBrex {
-  brex: BrexDocument;
-  /** どう見つけたか */
-  source: 'file' | 'dmc' | 'default';
-  path?: string;
+/** core の理由コードを、環境変数の設定方法を含む案内文にする */
+function hint(e: BrexLocateError, options: LocatorOptions): string {
+  switch (e.reason) {
+    case 'default-not-found':
+      return `No BREX specified and no S1000D default BREX found. Set ${ENV.specDir} to the folder where the S1000D distribution (containing the default BREX, DMC-S1000D-*-04-10-0301-00A-022A-D) is extracted, or pass "brex" as a file path or DMC.${specDir() ? '' : ` ${ENV.specDir} is not set.`}`;
+    case 'dmc-not-found':
+      return `${e.message}. Pass "csdbDirs" or set ${ENV.csdbDirs} / ${ENV.specDir}. Searched: ${searchDirs(options).join(', ') || '(no folders configured)'}.`;
+    case 'invalid-spec':
+      return `"brex" must be a file path or a DMC: ${e.message}`;
+    default:
+      return e.message;
+  }
 }
 
 export async function locateBrex(
   spec: string | undefined,
   options: LocatorOptions = {},
 ): Promise<LocatedBrex> {
-  if (spec === undefined || spec.trim() === '') {
-    const d = findDefaultBrex(options);
-    if (!d) {
-      throw new Error(
-        `No BREX specified and no default BREX found. Set ${'S1000D_SPEC_DIR'} to the folder where the S1000D distribution (containing the default BREX) is extracted, or pass "brex" as a file path or DMC.`,
-      );
-    }
-    return { brex: d.brex, source: 'default', path: d.path };
+  try {
+    return await coreLocateBrex(spec, { dirs: searchDirs(options) });
+  } catch (e) {
+    if (e instanceof BrexLocateError) throw new Error(hint(e, options));
+    throw e;
   }
-  const trimmed = spec.trim();
-  if (/\.xml$/i.test(trimmed) || existsSync(trimmed)) {
-    if (!existsSync(trimmed)) throw new Error(`BREX file not found: ${trimmed}`);
-    const r = readBrex(readFileSync(trimmed, 'utf8'));
-    if (!r.ok) throw new Error(`Not a BREX data module (${trimmed}): ${r.error}`);
-    return { brex: r.value, source: 'file', path: trimmed };
-  }
-  const dmc = parseDmc(trimmed);
-  if (!dmc.ok) throw new Error(`"brex" must be a file path or a DMC: ${dmc.error}`);
-  const brex = await makeResolver(options)({ dmCode: dmc.value });
-  if (!brex) {
-    throw new Error(
-      `BREX ${trimmed} was not found in: ${searchDirs(options).join(', ') || '(no folders configured)'}. Pass "csdbDirs" or set S1000D_CSDB_DIR / S1000D_SPEC_DIR.`,
-    );
-  }
-  return { brex, source: 'dmc' };
 }
 
 /** データモジュールの入力（パスか XML 文字列）を XML 文字列にする。 */
