@@ -21,7 +21,7 @@ An MCP server that lets an LLM read S1000D® BREX (Business Rules Exchange) data
 ## What it does not do
 
 > [!WARNING]
-> - **It does not validate against the XML schema (XSD).** Schema errors can hide BREX violations or create false ones. Run schema validation separately (it is planned for `s1000d-verify-mcp` in stage 2).
+> - **It does not validate against the XML schema (XSD).** Schema errors can hide BREX violations or create false ones. Run schema validation with `validate_schema` / `verify_data_module` in `s1000d-verify-mcp`.
 > - **It does not judge conformance to S1000D.** `passed: true` from `check_against_brex` means only that no machine-checkable BREX rule was violated in every layer that could be resolved. `nonContextRules` (rules written as prose) are returned as `manualChecks`, and a person makes the judgement.
 > - It does not interpret the meaning of severity level codes (`brsl01` to `brsl99`). The project defines them, so they are returned as they are.
 

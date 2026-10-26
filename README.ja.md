@@ -21,7 +21,7 @@ S1000D® の BREX（Business Rules Exchange）データモジュールを LLM �
 ## できないこと
 
 > [!WARNING]
-> - **XML スキーマ（XSD）による検証は行いません。** スキーマの誤りは BREX の違反を隠したり、逆に生んだりします。スキーマ検証は別に行ってください（段階 2 の `s1000d-verify-mcp` で扱う予定です）。
+> - **XML スキーマ（XSD）による検証は行いません。** スキーマの誤りは BREX の違反を隠したり、逆に生んだりします。スキーマ検証は `s1000d-verify-mcp` の `validate_schema` / `verify_data_module` で行ってください。
 > - **S1000D への準拠を判定しません。** `check_against_brex` の `passed: true` は「解決できたすべての層で、機械で検査できる BREX のルールに違反が無かった」ことだけを意味します。`nonContextRules`（文章で書かれた取り決め）は `manualChecks` として返し、判断は人が行います。
 > - 重大度コード（`brsl01`〜`brsl99`）の意味は解釈しません。プロジェクトが定めるものなので、そのまま返します。
 
