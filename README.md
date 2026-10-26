@@ -1,41 +1,43 @@
 # @shuji-bonji/s1000d-brex-mcp
 
-S1000D® の BREX（Business Rules Exchange）データモジュールを LLM が読み、データモジュールを BREX に照合できるようにする MCP サーバーです。プロジェクトや組織が BREX に書いた「使ってよい要素・属性」「許可する値とその意味」「システム番号（SNS）の意味」「使ってよい図の形式」を人が読める形で返し、データモジュールがそれに従っているかを箇所付きで報告します。
+**English** | [日本語](./README.ja.md)
+
+An MCP server that lets an LLM read S1000D® BREX (Business Rules Exchange) data modules and check data modules against a BREX. It returns, in a form people can read, what a project or organisation has written in its BREX: which elements and attributes may be used, which values are allowed and what they mean, what the standard numbering system (SNS) codes mean, and which illustration formats may be used. It also reports whether a data module follows those rules, with the location of each violation.
 
 > [!IMPORTANT]
-> このサーバーは ASD（Aerospace, Security and Defence Industries Association of Europe）とは無関係の個人プロジェクトです。S1000D® は ASD の登録商標です。
-> S1000D の仕様書・XML スキーマ・既定 BREX・公式サンプルは、利用条件により再配布できないため、このパッケージには含まれていません。既定 BREX を使うには、利用者ご自身で [s1000d.org](https://s1000d.org/) から配布物を入手し、展開したフォルダーを環境変数 `S1000D_SPEC_DIR` で指定してください。
+> This is a personal project and is not affiliated with ASD (Aerospace, Security and Defence Industries Association of Europe). S1000D® is a registered trademark of ASD.
+> The S1000D specification, XML schemas, default BREX and official samples are not included in any package or repository, because their terms of use do not grant redistribution. Obtain them from [s1000d.org](https://s1000d.org/) and point the `S1000D_SPEC_DIR` environment variable at the extracted folder.
 
-## できること
+## What it does
 
-| ツール | 内容 |
+| Tool | Description |
 |---|---|
-| `explain_brex` | BREX のルールを一覧にします。対象（XPath）、使用可否（禁止・必須・任意）、許可する値とその意味、重大度、適用されるスキーマを返します。`kind`・`context`・`search` で絞り、`offset`・`limit` で分けて読めます |
-| `lookup_sns` | DMC またはコードから、システム番号（SNS）が何を指すかを返します |
-| `lookup_value` | 要素・属性の値がプロジェクトで何を意味するか、どの値が許可されているかを返します |
-| `list_notations` | 使ってよい図・マルチメディアの形式を、基本セットとスキーマ別の追加・除外に分けて返します |
-| `check_against_brex` | データモジュールを BREX に照合し、違反を箇所（XPath と行番号）・実際の値・ルール ID・説明・重大度付きで返します。既定では `brexDmRef` の連鎖（プロジェクト BREX → … → 既定 BREX）をたどり、各層に個別に照合します |
+| `explain_brex` | Lists the rules of a BREX. Returns the target (XPath), whether it may be used (forbidden, required or optional), the allowed values and their meaning, the severity level and the schemas the rule applies to. Narrow the list with `kind`, `context` and `search`, and read it in parts with `offset` and `limit` |
+| `lookup_sns` | Returns what a standard numbering system (SNS) code refers to, from a DMC or a code |
+| `lookup_value` | Returns what an element or attribute value means in the project, and which values are allowed |
+| `list_notations` | Returns the illustration and multimedia formats that may be used, split into the base set and the per-schema additions and exclusions |
+| `check_against_brex` | Checks a data module against a BREX and returns each violation with its location (XPath and line number), actual value, rule ID, description and severity level. By default it follows the `brexDmRef` chain (project BREX → … → default BREX) and checks each layer separately |
 
-## できないこと
+## What it does not do
 
 > [!WARNING]
-> - **XML スキーマ（XSD）による検証は行いません。** スキーマの誤りは BREX の違反を隠したり、逆に生んだりします。スキーマ検証は別に行ってください（段階 2 の `s1000d-verify-mcp` で扱う予定です）。
-> - **S1000D への準拠を判定しません。** `check_against_brex` の `passed: true` は「解決できたすべての層で、機械で検査できる BREX のルールに違反が無かった」ことだけを意味します。`nonContextRules`（文章で書かれた取り決め）は `manualChecks` として返し、判断は人が行います。
-> - 重大度コード（`brsl01`〜`brsl99`）の意味は解釈しません。プロジェクトが定めるものなので、そのまま返します。
+> - **It does not validate against the XML schema (XSD).** Schema errors can hide BREX violations or create false ones. Run schema validation separately (it is planned for `s1000d-verify-mcp` in stage 2).
+> - **It does not judge conformance to S1000D.** `passed: true` from `check_against_brex` means only that no machine-checkable BREX rule was violated in every layer that could be resolved. `nonContextRules` (rules written as prose) are returned as `manualChecks`, and a person makes the judgement.
+> - It does not interpret the meaning of severity level codes (`brsl01` to `brsl99`). The project defines them, so they are returned as they are.
 
 > [!NOTE]
-> ある BREX にルールが無いことは「制限が無い」ことではありません。上位の BREX（`brexDmRef` でたどる。終端は S1000D の既定 BREX）や、人が読むビジネスルール文書に制限があることがあります。`check_against_brex` は見つからなかった層を `unresolvedBrex` で報告します。この項目が空でない結果は不完全なものとして扱ってください。
+> The absence of a rule in one BREX does not mean the absence of a restriction. A higher BREX (followed through `brexDmRef`, ending at the S1000D default BREX) or a business rules document written for people may restrict it. `check_against_brex` reports the layers it could not find in `unresolvedBrex`. Treat a result in which this field is not empty as incomplete.
 
-## 設定
+## Configuration
 
-| 環境変数 | 内容 |
+| Environment variable | Description |
 |---|---|
-| `S1000D_SPEC_DIR` | 利用者が入手した S1000D の配布物を展開したフォルダー。既定 BREX（`DMC-S1000D-*-04-10-0301-00A-022A-D_*.XML`）をこの下から探します。内側の zip も展開しておいてください |
-| `S1000D_CSDB_DIR` | プロジェクトのデータモジュールが置かれたフォルダー。`:`（Windows は `;`）区切りで複数指定できます。BREX を DMC で指定したときや、連鎖をたどるときにここから探します |
+| `S1000D_SPEC_DIR` | The folder where the S1000D distribution you obtained is extracted. The default BREX (`DMC-S1000D-*-04-10-0301-00A-022A-D_*.XML`) is searched for under it. Extract the inner zip files as well |
+| `S1000D_CSDB_DIR` | The folder that holds the project's data modules. Several folders can be given, separated by `:` (`;` on Windows). A BREX given by DMC, and the layers of the chain, are searched for here |
 
-ツールの引数 `csdbDirs` でフォルダーを追加することもできます。BREX は、ファイルのパス、DMC（`DMC-` 接頭辞は任意）、省略（既定 BREX）のどれでも指定できます。
+Folders can also be added with the tool argument `csdbDirs`. A BREX can be given as a file path, as a DMC (the `DMC-` prefix is optional), or omitted (the default BREX).
 
-### Claude Desktop / Claude Code の設定例
+### Example configuration for Claude Desktop / Claude Code
 
 ```json
 {
@@ -52,26 +54,26 @@ S1000D® の BREX（Business Rules Exchange）データモジュールを LLM �
 }
 ```
 
-## 照合の規則
+## Check rules
 
-S1000D Issue 7 の Chap 4.10.2（BREX data module）と Chap 7.9（Business rules processing）に沿っています。詳細は [`@shuji-bonji/s1000d-core`](https://github.com/shuji-bonji/s1000d-core) の README を参照してください。
+The check follows Chap 4.10.2 (BREX data module) and Chap 7.9 (Business rules processing) of S1000D Issue 7. See the README of [`@shuji-bonji/s1000d-core`](https://github.com/shuji-bonji/s1000d-core) for details.
 
-| 項目 | 扱い |
+| Item | Handling |
 |---|---|
-| `allowedObjectFlag` | `0` = 対象があれば違反、`1` = 無ければ違反、`2` = あれば値を `objectValue`（single / range / pattern）と照合 |
-| `rulesContext` | 対象データモジュールのスキーマに一致するブロックと、共通のブロックを適用 |
-| `notationRuleList` | DOCTYPE で宣言された NOTATION が許可された集合に無ければ違反 |
-| 階層 | 各層に個別に照合し、層の統合はしない。どの層にも違反が無く、未解決の参照も無いときだけ `passed` |
+| `allowedObjectFlag` | `0` = a violation if the target is present, `1` = a violation if it is absent, `2` = if present, the value is checked against `objectValue` (single / range / pattern) |
+| `rulesContext` | The blocks whose schema matches the target data module, and the common blocks, are applied |
+| `notationRuleList` | A violation if a NOTATION declared in the DOCTYPE is not in the allowed set |
+| Layers | Each layer is checked separately; the layers are not merged. `passed` only when no layer has a violation and no reference is unresolved |
 
-## 開発
+## Development
 
 ```sh
 npm install
 npm run build
-npm test            # 自作のテストデータだけで動く
-npm run test:spec   # S1000D の配布物を使う（S1000D_SPEC_DIR で場所を指定）
+npm test            # runs on self-made test data only
+npm run test:spec   # uses the S1000D distribution (set its location with S1000D_SPEC_DIR)
 ```
 
-## ライセンス
+## License
 
 MIT
