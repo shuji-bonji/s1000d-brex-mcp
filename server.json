@@ -1,0 +1,22 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.shuji-bonji/s1000d-brex-mcp",
+  "title": "S1000D BREX (S1000D Stack)",
+  "description": "Read S1000D BREX business rules and check data modules against them, layer by layer.",
+  "websiteUrl": "https://shuji-bonji.github.io/s1000d-stack/",
+  "repository": {
+    "url": "https://github.com/shuji-bonji/s1000d-brex-mcp",
+    "source": "github"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@shuji-bonji/s1000d-brex-mcp",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}
