@@ -1,19 +1,37 @@
 {
   "name": "@shuji-bonji/s1000d-brex-mcp",
   "mcpName": "io.github.shuji-bonji/s1000d-brex-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server that reads S1000D® BREX (Business Rules Exchange) data modules and checks data modules against them. Not affiliated with ASD.",
-  "keywords": ["mcp", "s1000d", "brex", "business-rules", "ietm", "ietp", "technical-publications", "xml"],
+  "keywords": [
+    "mcp",
+    "s1000d",
+    "brex",
+    "business-rules",
+    "ietm",
+    "ietp",
+    "technical-publications",
+    "xml"
+  ],
   "author": "shuji-bonji",
   "license": "MIT",
-  "repository": { "type": "git", "url": "git+https://github.com/shuji-bonji/s1000d-brex-mcp.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shuji-bonji/s1000d-brex-mcp.git"
+  },
   "bugs": "https://github.com/shuji-bonji/s1000d-brex-mcp/issues",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "bin": { "s1000d-brex-mcp": "dist/index.js" },
-  "files": ["dist"],
-  "publishConfig": { "access": "public" },
+  "bin": {
+    "s1000d-brex-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc && chmod +x dist/index.js",
     "dev": "tsc --watch",
@@ -42,5 +60,7 @@
     "typescript-eslint": "^8.53.0",
     "vitest": "^4.1.12"
   },
-  "engines": { "node": ">=22.0.0" }
+  "engines": {
+    "node": ">=22.0.0"
+  }
 }
