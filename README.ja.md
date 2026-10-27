@@ -67,6 +67,25 @@ S1000D® の BREX（Business Rules Exchange）データモジュールを LLM �
 }
 ```
 
+### HTTP で起動する（製品への組み込み）
+
+既定は stdio です。`--http` を付けると Streamable HTTP で起動し、CSDB 製品のサーバーや Web アプリから HTTP で呼べます（段階 2.5 の組み込み基盤）。
+
+```sh
+npx -y @shuji-bonji/s1000d-brex-mcp --http                      # http://127.0.0.1:3000/mcp
+npx -y @shuji-bonji/s1000d-brex-mcp --http --port 3100 --path /brex
+```
+
+| 引数 | 既定 | 内容 |
+|---|---|---|
+| `--host` | `127.0.0.1` | 束縛するアドレス |
+| `--port` | `3000` | ポート。`0` で空いているポート |
+| `--path` | `/mcp` | MCP のエンドポイントのパス。`GET /healthz` は名前と版を返します |
+| `--allowed-host` | （下記） | `Host` ヘッダーに許すホスト名。カンマ区切りか複数回 |
+| `--allowed-origin` | （下記） | `Origin` ヘッダーに許すホスト名 |
+
+`--host` が loopback（`127.0.0.1` / `::1` / `localhost`）のときは、`Host` と `Origin` を localhost 系に限ります（DNS rebinding 対策）。それ以外のアドレスに束縛したときは検査しないので、製品側のリバースプロキシや認証の後ろに置いてください。認証・権限・マルチテナントはこのサーバーでは持ちません。環境変数と設定ファイルの扱いは stdio と同じです。
+
 ## 照合の規則
 
 S1000D Issue 7 の Chap 4.10.2（BREX data module）と Chap 7.9（Business rules processing）に沿っています。詳細は [`@shuji-bonji/s1000d-core`](https://github.com/shuji-bonji/s1000d-core) の README を参照してください。
