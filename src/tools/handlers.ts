@@ -15,7 +15,7 @@ import {
   type BrexDocument,
   type BrexStructureRule,
 } from '@shuji-bonji/s1000d-core';
-import { LIMITS, specDir } from '../config.js';
+import { LIMITS, specDir, specDirHint } from '../config.js';
 import {
   loadDataModuleXml,
   locateBrex,
@@ -316,7 +316,7 @@ async function checkAgainst(args: Args) {
   ];
   if (report.unresolved.length > 0) {
     notes.push(
-      `Some BREX in the chain were not found (${report.unresolved.map((u) => formatDmc(u.dmCode)).join(', ')}). Searched: ${searchDirs({ extraDirs }).join(', ') || '(none)'}. ${specDir() ? '' : 'S1000D_SPEC_DIR is not set, so the S1000D default BREX cannot be found.'}`,
+      `Some BREX in the chain were not found (${report.unresolved.map((u) => formatDmc(u.dmCode)).join(', ')}). Searched: ${searchDirs({ extraDirs }).join(', ') || '(none)'}. ${specDir() ? '' : `S1000D_SPEC_DIR is not set, so the S1000D default BREX cannot be found. ${specDirHint()}`}`,
     );
   }
   return { ...trimReport(report, maxPerLayer, includeManual), _notes: notes };

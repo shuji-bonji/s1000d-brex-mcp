@@ -34,6 +34,8 @@ async function call(name: string, args: Record<string, unknown>) {
 beforeAll(async () => {
   delete process.env.S1000D_SPEC_DIR;
   delete process.env.S1000D_CSDB_DIR;
+  // 開発機の ~/.config/s1000d-stack/config.json を読まないよう、存在しない場所に向ける
+  process.env.S1000D_CONFIG = join(tmpdir(), 's1000d-no-such-config.json');
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   const server = buildServer();
   await server.connect(serverTransport);

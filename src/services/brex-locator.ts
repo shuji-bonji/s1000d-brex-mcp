@@ -15,7 +15,7 @@ import {
   type BrexResolver,
   type LocatedBrex,
 } from '@shuji-bonji/s1000d-core';
-import { ENV, csdbDirs, specDir } from '../config.js';
+import { ENV, csdbDirs, specDir, stackConfig } from '../config.js';
 
 export type { LocatedBrex };
 
@@ -47,7 +47,7 @@ export function findDefaultBrex(): { path: string; brex: BrexDocument } | undefi
 function hint(e: BrexLocateError, options: LocatorOptions): string {
   switch (e.reason) {
     case 'default-not-found':
-      return `No BREX specified and no S1000D default BREX found. Set ${ENV.specDir} to the folder where the S1000D distribution (containing the default BREX, DMC-S1000D-*-04-10-0301-00A-022A-D) is extracted, or pass "brex" as a file path or DMC.${specDir() ? '' : ` ${ENV.specDir} is not set.`}`;
+      return `No BREX specified and no S1000D default BREX found. Set ${ENV.specDir} to the folder where the S1000D distribution (containing the default BREX, DMC-S1000D-*-04-10-0301-00A-022A-D) is extracted, or pass "brex" as a file path or DMC.${specDir() ? '' : ` ${ENV.specDir} is not set and the config file ${stackConfig().configPath} has no specDir.`}`;
     case 'dmc-not-found':
       return `${e.message}. Pass "csdbDirs" or set ${ENV.csdbDirs} / ${ENV.specDir}. Searched: ${searchDirs(options).join(', ') || '(no folders configured)'}.`;
     case 'invalid-spec':

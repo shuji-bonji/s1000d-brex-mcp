@@ -37,6 +37,19 @@ An MCP server that lets an LLM read S1000D® BREX (Business Rules Exchange) data
 
 Folders can also be added with the tool argument `csdbDirs`. A BREX can be given as a file path, as a DMC (the `DMC-` prefix is optional), or omitted (the default BREX).
 
+### Config file (when environment variables are not passed, as with plugins in Claude Desktop)
+
+If `S1000D_SPEC_DIR` / `S1000D_CSDB_DIR` are not set, the server reads the config file `~/.config/s1000d-stack/config.json` (under `XDG_CONFIG_HOME` if it is set; `S1000D_CONFIG` changes the location). Claude Desktop does not pass environment variables to servers installed as plugins, and does not substitute `${VAR}` written in the plugin's `env`. When you install the server as a plugin, write the folders here.
+
+```json
+{
+  "specDir": "/path/to/s1000d/issue-7",
+  "csdbDirs": ["/path/to/your/csdb"]
+}
+```
+
+Environment variables take precedence when they are set. Paths that start with `~/` are accepted. The config file is read again on every call, so the server does not need to be restarted after you edit it.
+
 ### Example configuration for Claude Desktop / Claude Code
 
 ```json

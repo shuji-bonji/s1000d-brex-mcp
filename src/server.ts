@@ -21,7 +21,7 @@ It does NOT do the following:
 - It does not validate against the S1000D XML schemas (XSD). Run schema validation separately (s1000d-verify-mcp, planned); schema errors can hide or cause BREX findings.
 - It does not decide conformance. "passed: true" from \`check_against_brex\` means only that no machine-checkable BREX rule was violated in any resolved layer. nonContextRules are returned as \`manualChecks\` and must be judged by a person.
 - It does not interpret severity codes (brsl01..brsl99); they are project-defined and are passed through.
-- It does not ship any S1000D specification, schema or default BREX. The user must download the S1000D distribution from s1000d.org and set ${ENV.specDir} to the extracted folder; project data modules are found via ${ENV.csdbDirs} or the \`csdbDirs\` argument.
+- It does not ship any S1000D specification, schema or default BREX. The user must download the S1000D distribution from s1000d.org and set ${ENV.specDir} to the extracted folder (or write {"specDir": "/absolute/path"} to ~/.config/s1000d-stack/config.json, for hosts that do not pass environment variables to plugins); project data modules are found via ${ENV.csdbDirs}, "csdbDirs" in that config file, or the \`csdbDirs\` argument.
 
 Reading results: a rule that is absent from a BREX means "this BREX does not restrict it", NOT "it is unrestricted" — a parent BREX (followed via brexDmRef, ending at the S1000D default BREX) or a human-readable business rules document may restrict it. \`check_against_brex\` reports \`unresolvedBrex\` when a layer could not be found; treat such a result as incomplete.
 
