@@ -1,7 +1,7 @@
 {
   "name": "@shuji-bonji/s1000d-brex-mcp",
   "mcpName": "io.github.shuji-bonji/s1000d-brex-mcp",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "MCP server that reads S1000D® BREX (Business Rules Exchange) data modules and checks data modules against them. Not affiliated with ASD.",
   "keywords": [
     "mcp",
