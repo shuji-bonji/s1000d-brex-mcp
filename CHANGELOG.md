@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.0 (2026-10-27)
+
+依存を `@shuji-bonji/s1000d-core` `^0.3.0` に上げました（Issue #1）。
+
+### 変更
+
+- core 0.3.0 で BREX の NOTATION の照合が直りました。許可（`allowedNotationFlag="1"`）が 1 つも無く除外（`"0"`）だけの `notationRuleList` を持つ BREX を「使ってよい NOTATION が 0 件」と読み、使われているすべての NOTATION を違反にしていた誤りです（根拠は S1000D Issue 7 Chap 4.10.2.2 Para 2.2.2）。`check_against_brex` では、除外されたものだけが違反になります（Bike Samples では NOTATION の違反が 36 件 → 0 件）。
+- `list_notations` の `effectiveFor` に `mode`（`closed` / `open` / `unrestricted`）と `excluded` を足しました。除外だけの BREX では、これまで `allowed: null` だけが返り除外したものが分かりませんでしたが、`mode: "open"` と `excluded` で返します。`allowed` の意味（`closed` のときの使ってよい集合、それ以外は `null`）は変わりません。
+- `list_notations` の応答に `baseExcluded`（`rulesContext` の無い `contextRules` の中の除外）を足しました。これまでは基本セットの一覧から黙って落としていました。
+
 ## 0.1.1 (2026-10-27)
 
 MCP Registry と claude-plugins marketplace に載せるための版。ツールと応答は 0.1.0 から変わっていません。

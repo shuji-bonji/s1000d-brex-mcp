@@ -2,6 +2,8 @@
  * サーバを InMemoryTransport で叩き、ツール定義とハンドラの対応、各ツールの応答の形を確かめる。
  * テストデータは自作（券売機）。配布物は使わない。
  */
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -139,7 +141,35 @@ describe('lookup_sns / lookup_value / list_notations', () => {
     const r = await call('list_notations', { brex: projectBrex, context: 'proced' });
     expect(r.data.baseSet.map((b: { notation: string }) => b.notation)).toEqual(['png', 'cgm']);
     expect(r.data.perContext.proced[0]).toMatchObject({ notation: 'png', flag: '0' });
-    expect(r.data.effectiveFor.allowed).toEqual(['CGM']);
+    expect(r.data.effectiveFor).toMatchObject({ mode: 'closed', allowed: ['CGM'], excluded: [] });
+  });
+
+  it('除外（flag 0）だけの BREX は open になり、除外したものを返す', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 's1000d-brex-mcp-notation-'));
+    try {
+      const file = join(dir, 'DMC-KENBAIKI-A-00-00-00-00A-022A-D_001-00_JA-JP.XML');
+      writeFileSync(
+        file,
+        readFileSync(projectBrex, 'utf8').replaceAll(
+          'allowedNotationFlag="1"',
+          'allowedNotationFlag="0"',
+        ),
+      );
+      const r = await call('list_notations', { brex: file, context: 'descript' });
+      expect(r.data.baseSet).toEqual([]);
+      expect(r.data.baseExcluded.map((b: { notation: string }) => b.notation)).toEqual([
+        'png',
+        'cgm',
+      ]);
+      expect(r.data.effectiveFor).toMatchObject({
+        mode: 'open',
+        allowed: null,
+        excluded: ['PNG', 'CGM'],
+      });
+      expect(r.data._note).toContain('not restricted by this BREX');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
 

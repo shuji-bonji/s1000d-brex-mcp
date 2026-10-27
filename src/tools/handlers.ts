@@ -2,7 +2,7 @@
  * ツールの実装。definitions.ts の name と 1 対 1 で対応する。
  */
 import {
-  allowedNotations,
+  notationPolicy,
   checkAgainstBrexChain,
   checkAgainstBrexLayers,
   contextApplies,
@@ -212,6 +212,7 @@ async function listNotations(args: Args) {
   const located = await locateBrex(str(args.brex), { extraDirs: strArray(args.csdbDirs) });
   const brex = located.brex;
   const base: { notation: string; objectUse: string; ruleId?: string }[] = [];
+  const baseExcluded: { notation: string; objectUse: string; ruleId?: string }[] = [];
   const perContext: Record<
     string,
     { notation: string; flag?: string; objectUse: string; ruleId?: string }[]
@@ -219,8 +220,9 @@ async function listNotations(args: Args) {
   for (const c of brex.contextRules) {
     for (const r of c.notationRules) {
       if (c.rulesContext === undefined) {
-        if (r.allowedNotationFlag !== '0')
-          base.push({ notation: r.notationName, objectUse: r.objectUse, ruleId: r.ruleId });
+        const entry = { notation: r.notationName, objectUse: r.objectUse, ruleId: r.ruleId };
+        if (r.allowedNotationFlag === '0') baseExcluded.push(entry);
+        else base.push(entry);
       } else {
         const key = parseSchemaLocation(c.rulesContext).schemaName ?? c.rulesContext;
         (perContext[key] ??= []).push({
@@ -233,19 +235,29 @@ async function listNotations(args: Args) {
     }
   }
   const wanted = contextToLocation(str(args.context));
-  const effective = wanted ? allowedNotations(brex, wanted) : undefined;
+  // closed = 使ってよい集合が決まっている、open = 除外だけが決まっている（それ以外はこの BREX では制限しない）
+  const policy = wanted ? notationPolicy(brex, wanted) : undefined;
+  const restricts =
+    base.length > 0 || baseExcluded.length > 0 || Object.keys(perContext).length > 0;
   return {
     brex: formatDmc(brex.dmCode),
-    restricts: base.length > 0 || Object.keys(perContext).length > 0,
+    restricts,
     baseSet: base,
+    baseExcluded,
     perContext,
     effectiveFor: wanted
-      ? { context: str(args.context), allowed: effective ? [...effective] : null }
+      ? {
+          context: str(args.context),
+          mode: policy?.mode ?? 'unrestricted',
+          allowed: policy?.mode === 'closed' ? [...policy.allowed] : null,
+          excluded: policy?.mode === 'open' ? [...policy.excluded] : [],
+        }
       : undefined,
-    _note:
-      base.length === 0 && Object.keys(perContext).length === 0
-        ? 'This BREX has no notationRuleList, so it does not restrict illustration/multimedia formats. Check the parent BREX and the project business rules document.'
-        : 'flag 1 = allowed in that context (redefines the set for that schema), flag 0 = excluded in that context.',
+    _note: !restricts
+      ? 'This BREX has no notationRuleList, so it does not restrict illustration/multimedia formats. Check the parent BREX and the project business rules document.'
+      : base.length === 0
+        ? 'This BREX has no base set (no notation with flag 1 outside a schema context). Notations it lists with flag 0 are excluded; other notations are not restricted by this BREX (S1000D Issue 7 Chap 4.10.2.2). Check the parent BREX and the project business rules document.'
+        : 'flag 1 = allowed in that context (redefines the set for that schema), flag 0 = excluded in that context. effectiveFor.mode: "closed" = only "allowed" may be used, "open" = only "excluded" are forbidden, "unrestricted" = this BREX does not restrict notations.',
   };
 }
 

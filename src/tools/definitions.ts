@@ -111,7 +111,7 @@ export const tools: ToolDefinition[] = [
   {
     name: 'list_notations',
     description:
-      'List the illustration / multimedia notations (file formats) a BREX allows: the base set (common to all schemas) and the per-schema additions and exclusions. Pass "context" to get the effective set for one schema. Returns an empty base set when the BREX has no notation rules (then the BREX does not restrict notations).',
+      'List the illustration / multimedia notations (file formats) a BREX allows: the base set (common to all schemas) and the per-schema additions and exclusions. Pass "context" to get the effective rule for one schema: mode "closed" (only the listed notations may be used), "open" (only the excluded ones are forbidden; a BREX with exclusions only) or "unrestricted". Returns an empty base set when the BREX has no notation rules (then the BREX does not restrict notations).',
     inputSchema: {
       type: 'object',
       properties: {
