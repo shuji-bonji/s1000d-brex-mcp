@@ -16,7 +16,7 @@ S1000D® の BREX（Business Rules Exchange）データモジュールを LLM �
 | `lookup_sns` | DMC またはコードから、システム番号（SNS）が何を指すかを返します |
 | `lookup_value` | 要素・属性の値がプロジェクトで何を意味するか、どの値が許可されているかを返します |
 | `list_notations` | 使ってよい図・マルチメディアの形式を、基本セット（`baseSet`）・基本セットからの除外（`baseExcluded`）・スキーマ別の再定義と除外（`perContext`）に分けて返します。`context` を渡すと、そのスキーマでの扱いを `effectiveFor.mode` で返します（`closed` = `allowed` だけ使える、`open` = `excluded` だけ禁止、`unrestricted` = この BREX は制限しない）。除外だけの BREX は `open` です |
-| `check_against_brex` | データモジュールを BREX に照合し、違反を箇所（XPath と行番号）・実際の値・ルール ID・説明・重大度付きで返します。既定では `brexDmRef` の連鎖（プロジェクト BREX → … → 既定 BREX）をたどり、各層に個別に照合します |
+| `check_against_brex` | データモジュールを BREX に照合し、違反を箇所（XPath と行番号）・実際の値・ルール ID・説明・重大度付きで返します。既定では `brexDmRef` の連鎖（プロジェクト BREX → … → 既定 BREX）をたどり、各層に個別に照合します。パブリケーションモジュール（PM）と comment も照合でき、`pmStatus` / `commentStatus` の `brexDmRef` をたどります |
 
 ## できないこと
 

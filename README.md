@@ -16,7 +16,7 @@ An MCP server that lets an LLM read S1000D® BREX (Business Rules Exchange) data
 | `lookup_sns` | Returns what a standard numbering system (SNS) code refers to, from a DMC or a code |
 | `lookup_value` | Returns what an element or attribute value means in the project, and which values are allowed |
 | `list_notations` | Returns the illustration and multimedia formats that may be used, split into the base set (`baseSet`), exclusions from the base set (`baseExcluded`) and the per-schema redefinitions and exclusions (`perContext`). With `context`, it returns how that schema is restricted in `effectiveFor.mode` (`closed` = only `allowed` may be used, `open` = only `excluded` are forbidden, `unrestricted` = this BREX does not restrict notations). A BREX with exclusions only is `open` |
-| `check_against_brex` | Checks a data module against a BREX and returns each violation with its location (XPath and line number), actual value, rule ID, description and severity level. By default it follows the `brexDmRef` chain (project BREX → … → default BREX) and checks each layer separately |
+| `check_against_brex` | Checks a data module against a BREX and returns each violation with its location (XPath and line number), actual value, rule ID, description and severity level. By default it follows the `brexDmRef` chain (project BREX → … → default BREX) and checks each layer separately. A publication module (PM) or a comment can also be checked; its `brexDmRef` in `pmStatus` / `commentStatus` is followed |
 
 ## What it does not do
 

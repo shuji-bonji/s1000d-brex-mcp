@@ -128,7 +128,7 @@ export const tools: ToolDefinition[] = [
   {
     name: 'check_against_brex',
     description:
-      'Check a data module against BREX rules and report violations with location (XPath + line), actual value, rule id, objectUse text and severity. By default follows the data module\'s brexDmRef chain (project BREX → … → S1000D default BREX found under S1000D_SPEC_DIR) and checks each layer separately; pass "brex" to check against one specific BREX instead or in addition. Does NOT validate against the XML schema (XSD): run schema validation separately. nonContextRules cannot be checked automatically and are returned as manualChecks.',
+      'Check a data module against BREX rules and report violations with location (XPath + line), actual value, rule id, objectUse text and severity. Also accepts a publication module (pm) or a comment (the brexDmRef in pmStatus / commentStatus is followed). By default follows the document\'s brexDmRef chain (project BREX → … → S1000D default BREX found under S1000D_SPEC_DIR) and checks each layer separately; pass "brex" to check against one specific BREX instead or in addition. Does NOT validate against the XML schema (XSD): run schema validation separately. nonContextRules cannot be checked automatically and are returned as manualChecks.',
     inputSchema: {
       type: 'object',
       properties: {

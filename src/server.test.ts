@@ -210,6 +210,51 @@ describe('check_against_brex', () => {
     expect(r.data._notes.join(' ')).toContain('S1000D_SPEC_DIR is not set');
   });
 
+  it('PM も pmStatus の brexDmRef から連鎖をたどる（core 0.8.0 以降）', async () => {
+    const pm = `<?xml version="1.0" encoding="UTF-8"?>
+<pm xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="http://www.s1000d.org/S1000D_7/xml_schema_flat/pm.xsd">
+  <identAndStatusSection>
+    <pmAddress>
+      <pmIdent>
+        <pmCode modelIdentCode="KENBAIKI" pmIssuer="K0001" pmNumber="00001" pmVolume="00"/>
+        <language languageIsoCode="ja" countryIsoCode="JP"/>
+        <issueInfo issueNumber="001" inWork="00"/>
+      </pmIdent>
+      <pmAddressItems>
+        <issueDate year="2026" month="10" day="29"/>
+        <pmTitle>券売機</pmTitle>
+      </pmAddressItems>
+    </pmAddress>
+    <pmStatus issueType="new">
+      <security securityClassification="01"/>
+      <responsiblePartnerCompany enterpriseCode="K0001"/>
+      <applic><displayText><simplePara>All</simplePara></displayText></applic>
+      <brexDmRef>
+        <dmRef>
+          <dmRefIdent>
+            <dmCode modelIdentCode="KENBAIKI" systemDiffCode="A" systemCode="00" subSystemCode="0"
+              subSubSystemCode="0" assyCode="00" disassyCode="00" disassyCodeVariant="A" infoCode="022"
+              infoCodeVariant="A" itemLocationCode="D"/>
+          </dmRefIdent>
+        </dmRef>
+      </brexDmRef>
+      <qualityAssurance><unverified/></qualityAssurance>
+    </pmStatus>
+  </identAndStatusSection>
+  <content><pmEntry/></content>
+</pm>`;
+    const r = await call('check_against_brex', { xml: pm, csdbDirs: [fixtures] });
+    expect(r.isError).toBe(false);
+    expect(r.data.target.pmc).toBe('KENBAIKI-K0001-00001-00');
+    expect(r.data.target.dmc).toBeUndefined();
+    expect(r.data.unresolvedBrex).toEqual([]);
+    expect(r.data.layers.map((l: { brex: string }) => l.brex)).toEqual([
+      'KENBAIKI-A-00-00-00-00A-022A-D',
+      'KBWORKS-A-00-00-00-00A-022A-D',
+    ]);
+  });
+
   it('path も xml も無ければエラー', async () => {
     const r = await call('check_against_brex', {});
     expect(r.isError).toBe(true);

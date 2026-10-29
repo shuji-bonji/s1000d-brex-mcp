@@ -6,7 +6,9 @@ import {
   checkAgainstBrexChain,
   checkAgainstBrexLayers,
   contextApplies,
+  formatCommentCode,
   formatDmc,
+  formatPmc,
   lookupSns,
   matchesAnyObjectValue,
   parseDmc,
@@ -266,6 +268,10 @@ function trimReport(report: BrexCheckReport, maxPerLayer: number, includeManual:
     passed: report.passed,
     target: {
       dmc: report.target.dmCode ? formatDmc(report.target.dmCode) : undefined,
+      pmc: report.target.pmCode ? formatPmc(report.target.pmCode) : undefined,
+      commentCode: report.target.commentCode
+        ? formatCommentCode(report.target.commentCode)
+        : undefined,
       schema: report.target.schemaName,
       schemaLocation: report.target.schemaLocation,
     },

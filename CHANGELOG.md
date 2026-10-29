@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.5.0 (2026-10-29)
+
+依存を `@shuji-bonji/s1000d-core` `^0.8.2` に上げました。これまでの `^0.4.0` は 0.x の範囲指定のため 0.4.x しか受け付けず、s1000d-verify-mcp・s1000d-reader-mcp（core 0.8.2）と BREX の照合結果が食い違うことがありました（D-10 は、照合を core に置き、両方の MCP が同じ処理を呼ぶと決めています）。
+
+### 変更
+
+- `check_against_brex` に PM と comment を渡すと、`pmStatus` / `commentStatus` の `brexDmRef` から連鎖をたどるようになりました（core 0.8.0）。これまでは連鎖の起点が見つからず、層が 0 件になっていました。
+- 応答の `target` に `pmc` と `commentCode` を足しました。PM・comment を渡したときは `dmc` の代わりにこちらが入ります。
+- core 0.5.0〜0.8.2 の BREX まわりの修正（BREX の解決器を `CsdbIndex` から作る形への変更など）も入ります。ツールの引数は変わりません。
+
 ## 0.4.0 (2026-10-27)
 
 ### 追加
