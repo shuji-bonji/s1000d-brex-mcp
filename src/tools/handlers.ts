@@ -31,6 +31,7 @@ import {
   explainStructureRule,
   type ExplainedRule,
 } from '../services/explain.js';
+import { ToolInputError } from '../errors.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Args = Record<string, any>;
@@ -128,7 +129,7 @@ async function lookupSnsTool(args: Args) {
   const dmcText = str(args.dmc);
   if (dmcText) {
     const dmc = parseDmc(dmcText);
-    if (!dmc.ok) throw new Error(dmc.error);
+    if (!dmc.ok) throw new ToolInputError('input-error', '/dmc', dmc.error);
     codes = {
       systemCode: dmc.value.systemCode,
       subSystemCode: dmc.value.subSystemCode,
@@ -137,7 +138,8 @@ async function lookupSnsTool(args: Args) {
     };
   } else {
     const systemCode = str(args.systemCode);
-    if (!systemCode) throw new Error('Pass either "dmc" or "systemCode"');
+    if (!systemCode)
+      throw new ToolInputError('input-error', '/systemCode', 'Pass either "dmc" or "systemCode"');
     codes = {
       systemCode,
       subSystemCode: str(args.subSystemCode),
@@ -174,7 +176,7 @@ function targetMatches(rule: BrexStructureRule, target: string): boolean {
 async function lookupValue(args: Args) {
   const located = await locateBrex(str(args.brex), { extraDirs: strArray(args.csdbDirs) });
   const target = str(args.target);
-  if (!target) throw new Error('"target" is required');
+  if (!target) throw new ToolInputError('input-error', '/target', '"target" is required');
   const value = str(args.value);
   const wanted = contextToLocation(str(args.context));
   const matches: unknown[] = [];
@@ -313,7 +315,8 @@ async function checkAgainst(args: Args) {
   if (followChain) {
     report = await checkAgainstBrexChain(xml, makeResolver({ extraDirs }), { extraLayers: extra });
   } else {
-    if (extra.length === 0) throw new Error('followChain=false requires "brex"');
+    if (extra.length === 0)
+      throw new ToolInputError('input-error', '/brex', 'followChain=false requires "brex"');
     report = checkAgainstBrexLayers(xml, extra);
   }
   const notes: string[] = [

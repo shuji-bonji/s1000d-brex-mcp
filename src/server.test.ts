@@ -105,10 +105,21 @@ describe('explain_brex', () => {
     expect(searched.data.rules[0].kind).toBe('nonContext');
   });
 
-  it('BREX を省略し既定 BREX も無ければ、設定方法を示すエラー', async () => {
+  it('BREX を省略し既定 BREX も無ければ、設定方法を示す not-found（isError ではない）', async () => {
     const r = await call('explain_brex', {});
-    expect(r.isError).toBe(true);
-    expect(r.data.error).toContain('S1000D_SPEC_DIR');
+    expect(r.isError).toBe(false);
+    expect(r.data.error).toMatchObject({ code: 'not-found', path: '/brex' });
+    expect(r.data.error.detail).toContain('S1000D_SPEC_DIR');
+  });
+
+  it('無い BREX のファイルは file-not-found、DMC が見つからなければ not-found', async () => {
+    const file = await call('explain_brex', { brex: join(fixtures, 'no-such-brex.XML') });
+    expect(file.data.error).toMatchObject({ code: 'file-not-found', path: '/brex' });
+    const dmc = await call('explain_brex', {
+      brex: 'NOSUCH-A-00-00-00-00A-022A-D',
+      csdbDirs: [fixtures],
+    });
+    expect(dmc.data.error).toMatchObject({ code: 'not-found', path: '/brex' });
   });
 });
 
@@ -255,8 +266,33 @@ describe('check_against_brex', () => {
     ]);
   });
 
-  it('path も xml も無ければエラー', async () => {
+  it('path も xml も無ければ input-error、無いファイルは file-not-found', async () => {
     const r = await call('check_against_brex', {});
-    expect(r.isError).toBe(true);
+    expect(r.isError).toBe(false);
+    expect(r.data.error).toMatchObject({ code: 'input-error', path: '/path' });
+    const missing = await call('check_against_brex', { path: join(fixtures, 'no-such.XML') });
+    expect(missing.data.error).toMatchObject({ code: 'file-not-found', path: '/path' });
+  });
+
+  it('csdbDirs を渡すと S1000D_CSDB_DIR は使わず、存在しないフォルダーは _notes で知らせる', async () => {
+    const empty = mkdtempSync(join(tmpdir(), 's1000d-brex-mcp-empty-'));
+    const nowhere = join(tmpdir(), 's1000d-brex-mcp-no-such-csdb');
+    process.env.S1000D_CSDB_DIR = fixtures;
+    try {
+      // 設定のフォルダーだけなら、DM の brexDmRef の連鎖をたどれる
+      const fromEnv = await call('check_against_brex', { path: dm });
+      expect(fromEnv.data.unresolvedBrex).toEqual([]);
+      // 引数で渡すと設定は使わないので、連鎖の BREX が見つからない
+      const r = await call('check_against_brex', { path: dm, csdbDirs: [empty, nowhere] });
+      expect(r.isError).toBe(false);
+      expect(r.data.unresolvedBrex.length).toBeGreaterThan(0);
+      const notes = r.data._notes.join(' ');
+      expect(notes).toContain(nowhere);
+      expect(notes).toContain('the csdbDirs argument');
+      expect(notes).not.toContain(`Searched: ${fixtures}`);
+    } finally {
+      delete process.env.S1000D_CSDB_DIR;
+      rmSync(empty, { recursive: true, force: true });
+    }
   });
 });

@@ -16,7 +16,7 @@ const csdbDirsParam = {
   type: 'array',
   items: { type: 'string' },
   description:
-    'Extra folders to search for data modules and BREX by DMC (in addition to S1000D_CSDB_DIR and S1000D_SPEC_DIR).',
+    'CSDB folders to search for BREX by DMC (default: S1000D_CSDB_DIR / the config file; S1000D_SPEC_DIR is always searched for the S1000D default BREX). When given, these folders replace S1000D_CSDB_DIR and the csdbDirs of the config file (they are not added to them); folders that do not exist are skipped and reported in _notes.',
 } as const;
 
 export const tools: ToolDefinition[] = [

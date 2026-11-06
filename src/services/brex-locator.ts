@@ -16,20 +16,46 @@ import {
   type LocatedBrex,
 } from '@shuji-bonji/s1000d-core';
 import { ENV, csdbDirs, specDir, stackConfig } from '../config.js';
+import { ToolInputError, type ToolErrorCode } from '../errors.js';
 
 export type { LocatedBrex };
 
 export interface LocatorOptions {
-  /** ツール引数で追加されたフォルダー */
+  /** ツール引数の csdbDirs */
   extraDirs?: string[];
 }
 
-/** 検索対象のフォルダー（優先順: ツール引数 → CSDB 環境変数 → 配布物） */
+const isDir = (d: string) => existsSync(d) && statSync(d).isDirectory();
+
+/**
+ * CSDB として指定されたフォルダーの並び。ツール引数の `csdbDirs` を渡したときはそれだけを使い、
+ * 設定（S1000D_CSDB_DIR・設定ファイルの csdbDirs）は使わない。渡さないときは設定を使う
+ */
+function requestedCsdbDirs(options: LocatorOptions): string[] {
+  return options.extraDirs !== undefined && options.extraDirs.length > 0
+    ? options.extraDirs
+    : csdbDirs();
+}
+
+/** 検索対象のフォルダー（ツール引数の csdbDirs があればそれ、無ければ設定の CSDB。最後に配布物） */
 export function searchDirs(options: LocatorOptions = {}): string[] {
-  const dirs = [...(options.extraDirs ?? []), ...csdbDirs()];
+  const dirs = [...requestedCsdbDirs(options)];
   const spec = specDir();
   if (spec) dirs.push(spec);
-  return [...new Set(dirs.filter((d) => existsSync(d) && statSync(d).isDirectory()))];
+  return [...new Set(dirs.filter(isDir))];
+}
+
+/** 使わなかったフォルダー（存在しない、またはフォルダーでない）の注記。無ければ空 */
+export function missingCsdbDirsNotes(options: LocatorOptions = {}): string[] {
+  const missing = [...new Set(requestedCsdbDirs(options).filter((d) => !isDir(d)))];
+  if (missing.length === 0) return [];
+  const from =
+    options.extraDirs !== undefined && options.extraDirs.length > 0
+      ? 'the csdbDirs argument'
+      : `${ENV.csdbDirs} / the config file`;
+  return [
+    `These CSDB folders from ${from} do not exist or are not folders, and were not searched: ${missing.join(', ')}`,
+  ];
 }
 
 export function makeResolver(options: LocatorOptions = {}): BrexResolver {
@@ -64,7 +90,15 @@ export async function locateBrex(
   try {
     return await coreLocateBrex(spec, { dirs: searchDirs(options) });
   } catch (e) {
-    if (e instanceof BrexLocateError) throw new Error(hint(e, options));
+    if (e instanceof BrexLocateError) {
+      const code: ToolErrorCode =
+        e.reason === 'file-not-found'
+          ? 'file-not-found'
+          : e.reason === 'default-not-found' || e.reason === 'dmc-not-found'
+            ? 'not-found'
+            : 'input-error';
+      throw new ToolInputError(code, '/brex', hint(e, options));
+    }
     throw e;
   }
 }
@@ -76,12 +110,21 @@ export function loadDataModuleXml(
 ): string {
   if (input.xml !== undefined && input.xml.trim() !== '') {
     if (Buffer.byteLength(input.xml, 'utf8') > maxBytes)
-      throw new Error(`Inline XML exceeds ${maxBytes} bytes`);
+      throw new ToolInputError('input-error', '/xml', `Inline XML exceeds ${maxBytes} bytes`);
     return input.xml;
   }
   if (input.path !== undefined && input.path.trim() !== '') {
-    if (!existsSync(input.path)) throw new Error(`Data module file not found: ${input.path}`);
+    if (!existsSync(input.path))
+      throw new ToolInputError(
+        'file-not-found',
+        '/path',
+        `Data module file not found: ${input.path}`,
+      );
     return readFileSync(input.path, 'utf8');
   }
-  throw new Error('Either "path" or "xml" of the data module is required');
+  throw new ToolInputError(
+    'input-error',
+    '/path',
+    'Either "path" or "xml" of the data module is required',
+  );
 }

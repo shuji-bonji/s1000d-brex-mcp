@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.0 (2026-11-06)
+
+Grok Build の試用（hub の `eval/hosts/grok-build/reports/2026-11/FINDINGS.md` の F-02・F-03）を受けて s1000d-verify-mcp 0.7.0・s1000d-reader-mcp 0.8.0・s1000d-writer-mcp 0.2.0 で直した点を、このサーバーにも入れました。4 本で `csdbDirs` の扱いと誤りの返し方がそろいます。依存の `@shuji-bonji/s1000d-core` は `^0.8.2` のままです。
+
+### 変更（動きが変わります）
+
+- **ツール引数の `csdbDirs` は、設定を置き換えます。** これまでは、渡したフォルダーと `S1000D_CSDB_DIR`・設定ファイル（`~/.config/s1000d-stack/config.json`）の `csdbDirs` を足し合わせて BREX を探していました。引数で渡したときは、そのフォルダーだけを使います。渡さないときは、これまでどおり設定を使います。既定 BREX は、どちらの場合も `S1000D_SPEC_DIR` から探します。連鎖の途中の BREX（組織の BREX など）が設定のフォルダーにあるときは、そのフォルダーも引数に並べてください。
+- **存在しないフォルダーは `_notes` で知らせます。** これまでは、何も知らせずに落としていました。
+- **呼び出し側が直せる誤りは、`isError` ではなく `{"error": {"code", "path", "detail"}}` で返します**（他の 3 本と同じ形）。`code` は `file-not-found`（`path` の DM や `brex` のファイルが無い）・`not-found`（DMC で指定した BREX、または既定 BREX が見つからない）・`input-error`（DMC の形が違う、`target` や `path` が無い、`followChain: false` なのに `brex` が無いなど）。`path` は直す引数の場所（`/brex`、`/path` など）です。これまでの `{"error": "…"}`（文字列）と `isError: true` は、想定外の失敗（サーバーの障害）にだけ使います。
+
 ## 0.5.0 (2026-10-29)
 
 依存を `@shuji-bonji/s1000d-core` `^0.8.2` に上げました。これまでの `^0.4.0` は 0.x の範囲指定のため 0.4.x しか受け付けず、s1000d-verify-mcp・s1000d-reader-mcp（core 0.8.2）と BREX の照合結果が食い違うことがありました（D-10 は、照合を core に置き、両方の MCP が同じ処理を呼ぶと決めています）。
