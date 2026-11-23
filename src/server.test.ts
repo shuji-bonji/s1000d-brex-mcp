@@ -100,6 +100,18 @@ describe('explain_brex', () => {
     expect(paged.data.returned).toBe(4);
     expect(paged.data.nextOffset).toBe(8);
 
+    // includeCommonInfo: false は、commonInfo の本文の代わりに文字数を返す（Grok Build の所見 F-13）
+    expect(typeof all.data.brex.commonInfo).toBe('string');
+    expect(all.data.brex).not.toHaveProperty('commonInfoLength');
+    const slim = await call('explain_brex', {
+      brex: projectBrex,
+      limit: 1,
+      includeCommonInfo: false,
+    });
+    expect(slim.data.brex).not.toHaveProperty('commonInfo');
+    expect(slim.data.brex.commonInfoLength).toBe(all.data.brex.commonInfo.length);
+    expect(slim.data.brex.counts).toEqual(all.data.brex.counts);
+
     const searched = await call('explain_brex', { brex: projectBrex, search: '同期' });
     expect(searched.data.total).toBe(1);
     expect(searched.data.rules[0].kind).toBe('nonContext');

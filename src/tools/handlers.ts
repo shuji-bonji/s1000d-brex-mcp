@@ -119,8 +119,14 @@ async function explainBrex(args: Args) {
       )
     : rules;
   const page = filtered.slice(offset, offset + limit);
+  // includeCommonInfo: false のときは、commonInfo の本文を返さず、文字数だけを返す（ページを続けて読むときなど）
+  const header = brexHeader(brex);
+  const { commonInfo, ...headerWithoutCommonInfo } = header;
   return {
-    brex: brexHeader(brex),
+    brex:
+      args.includeCommonInfo === false && commonInfo !== undefined
+        ? { ...headerWithoutCommonInfo, commonInfoLength: commonInfo.length }
+        : header,
     source: located.source,
     path: located.path,
     total: filtered.length,

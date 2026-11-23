@@ -23,7 +23,7 @@ export const tools: ToolDefinition[] = [
   {
     name: 'explain_brex',
     description:
-      'List the rules of a BREX data module in readable form: for each rule, the target (XPath), whether it is forbidden / required / optional, the allowed values with their meanings, severity, and the schema context it applies to. Also returns the BREX header (DMC, parent BREX, counts). Use "kind" and "context" to narrow, "offset"/"limit" to page.',
+      'List the rules of a BREX data module in readable form: for each rule, the target (XPath), whether it is forbidden / required / optional, the allowed values with their meanings, severity, and the schema context it applies to. Also returns the BREX header (DMC, parent BREX, commonInfo, counts). Use "kind" and "context" to narrow, "offset"/"limit" to page. The header carries the whole commonInfo text whatever "limit" is; pass includeCommonInfo: false to get its length instead.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -54,6 +54,12 @@ export const tools: ToolDefinition[] = [
           type: 'number',
           description: 'Maximum rules to return (default 50, max 500).',
           default: 50,
+        },
+        includeCommonInfo: {
+          type: 'boolean',
+          description:
+            'Return the commonInfo text of the BREX in the header (default true). Pass false to get "commonInfoLength" (number of characters) instead, for example when reading further pages of the same BREX.',
+          default: true,
         },
       },
       additionalProperties: false,

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.9.0 (2026-11-24)
+
+Grok Build の試用（2026-11-05）の所見のうち、未確認だった F-13 を直しました（hub の `eval/hosts/grok-build/reports/2026-11/FINDINGS.md`）。
+
+### 追加
+
+- **`explain_brex` に引数 `includeCommonInfo`（既定は `true`）を足しました。** ヘッダー（`brex`）の `commonInfo` は BREX の `commonInfo` の全文で、`limit` を 1 にしても毎回入ります（Issue 7 の既定 BREX では約 1,400 文字）。`includeCommonInfo: false` を渡すと、`commonInfo` の代わりに文字数の `commonInfoLength` を返します。同じ BREX の続きのページを読むときに使えます。渡さなければ、応答はこれまでと同じです。
+- `explain_brex` の説明に、ヘッダーが `limit` と関係なく `commonInfo` の全文を持つことを書きました。
+
+### テスト
+
+- 自作の BREX で、`includeCommonInfo: false` のときに `commonInfo` が無く、`commonInfoLength` が元の文字数と同じであることを確かめるテストを足しました。
+
 ## 0.8.1 (2026-11-24)
 
 ### 修正
