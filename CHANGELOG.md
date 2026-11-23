@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.1 (2026-11-24)
+
+### 修正
+
+- **BREX の連鎖の終端の BREX では、親の BREX を見るよう案内しないようにしました。** `brexDmRef` が無いか、自分自身を指す BREX（既定 BREX や、自分自身を指して連鎖を終える自作の BREX）について、`list_notations`・`lookup_value`・`lookup_sns` の注記は「Check the parent BREX」「a parent BREX may have rules」のように親の BREX を案内していました。今後は「This BREX ends the BREX chain (it has no parent BREX)」と書きます。親のある BREX では、これまでどおりの文です（[#3](https://github.com/shuji-bonji/s1000d-brex-mcp/issues/3)、hub の `eval/hosts/grok-build/reports/2026-11/FINDINGS.md` の F-14）。
+- サーバーの instructions と `check_against_brex` の説明が、連鎖は「S1000D の既定 BREX で終わる」と書いていたのを、「自分自身を指す BREX で終わる。ふつうは既定 BREX」に直しました。
+
+応答の項目は変わりません。
+
 ## 0.8.0 (2026-11-24)
 
 ### 変更（応答の項目名が変わります）

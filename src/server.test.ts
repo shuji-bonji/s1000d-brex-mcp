@@ -166,6 +166,41 @@ describe('lookup_sns / lookup_value / list_notations', () => {
     expect(notes).toContain(nowhere);
   });
 
+  it('連鎖の終端の BREX（自分自身を指す）では、親の BREX を見るよう案内しない（F-14）', async () => {
+    // KENBAIKI の BREX を写し、brexDmRef を自分自身に向け、SNS と NOTATION の決まりを外す
+    const dir = mkdtempSync(join(tmpdir(), 's1000d-brex-mcp-self-'));
+    try {
+      const xml = readFileSync(projectBrex, 'utf8')
+        .replace(/(<brexDmRef>[\s\S]*?modelIdentCode=")KBWORKS(")/, '$1KENBAIKI$2')
+        .replace(/<snsRules>[\s\S]*?<\/snsRules>/, '')
+        .replace(/<notationRuleList>[\s\S]*?<\/notationRuleList>/g, '');
+      const selfBrex = join(dir, 'DMC-KENBAIKI-A-00-00-00-00A-022A-D_001-00_JA-JP.XML');
+      writeFileSync(selfBrex, xml);
+
+      const notations = await call('list_notations', { brex: selfBrex });
+      expect(notations.data.restricts).toBe(false);
+      const n = notations.data._notes.join(' ');
+      expect(n).toContain('ends the BREX chain');
+      expect(n).not.toContain('Check the parent BREX');
+
+      const value = await call('lookup_value', { brex: selfBrex, target: 'noSuchThing' });
+      const v = value.data._notes.join(' ');
+      expect(v).toContain('ends the BREX chain');
+      expect(v).not.toContain('a parent BREX may have rules');
+
+      const sns = await call('lookup_sns', { brex: selfBrex, systemCode: '10' });
+      const s = sns.data._notes.join(' ');
+      expect(s).toContain('ends the BREX chain');
+      expect(s).not.toContain('defined in a parent BREX');
+
+      // 親のある BREX（KENBAIKI → KBWORKS）では、これまでどおり親を案内する
+      const parented = await call('lookup_value', { brex: projectBrex, target: 'noSuchThing' });
+      expect(parented.data._notes.join(' ')).toContain('a parent BREX may have rules');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it('値の意味と許可を返す', async () => {
     const ok = await call('lookup_value', { brex: projectBrex, target: 'infoCode', value: '520' });
     expect(ok.data.matches).toHaveLength(1);

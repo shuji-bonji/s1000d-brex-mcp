@@ -8,6 +8,7 @@ import {
   contextApplies,
   formatCommentCode,
   formatDmc,
+  sameDmc,
   formatPmc,
   lookupSns,
   matchesAnyObjectValue,
@@ -40,6 +41,15 @@ export type ToolHandler = (args: Args) => Promise<unknown>;
 /** 注記を `_notes`（配列）にする。ほかの 3 本の MCP と同じ形（F-10）。注記が無ければ空の配列 */
 function notes(...texts: Array<string | undefined>): string[] {
   return texts.filter((t): t is string => typeof t === 'string' && t.length > 0);
+}
+
+/**
+ * この BREX が連鎖の終端か。`brexDmRef` が無いか、自分自身を指すときは親の BREX が無い（F-14）。
+ * 既定 BREX のほか、自分自身を指して連鎖を終える自作の BREX もこれに当たる。
+ */
+function endsChain(brex: BrexDocument): boolean {
+  const parent = brex.brexDmRef?.dmCode;
+  return parent === undefined || sameDmc(parent, brex.dmCode);
 }
 
 function str(v: unknown): string | undefined {
@@ -166,7 +176,9 @@ async function lookupSnsTool(args: Args) {
         ? result
           ? undefined
           : 'This BREX defines SNS rules, but none matched the given codes.'
-        : 'This BREX has no snsRules; the SNS may be defined in a parent BREX or in a separate business rules document.',
+        : endsChain(located.brex)
+          ? 'This BREX has no snsRules and ends the BREX chain (it has no parent BREX); the SNS may be defined in a separate business rules document.'
+          : 'This BREX has no snsRules; the SNS may be defined in a parent BREX or in a separate business rules document.',
     ),
   };
 }
@@ -215,7 +227,9 @@ async function lookupValue(args: Args) {
     matches,
     _notes: notes(
       matches.length === 0
-        ? 'No rule in this BREX mentions the target. That means the BREX does not restrict it here; the XML schema may still constrain it, and a parent BREX may have rules.'
+        ? endsChain(located.brex)
+          ? 'No rule in this BREX mentions the target. That means the BREX does not restrict it here; the XML schema may still constrain it. This BREX ends the BREX chain (it has no parent BREX), so no parent BREX adds rules.'
+          : 'No rule in this BREX mentions the target. That means the BREX does not restrict it here; the XML schema may still constrain it, and a parent BREX may have rules.'
         : '"allowed: null" means the rule lists no value restriction (only usage/meaning).',
     ),
   };
@@ -224,6 +238,10 @@ async function lookupValue(args: Args) {
 async function listNotations(args: Args) {
   const located = await locateBrex(str(args.brex), { extraDirs: strArray(args.csdbDirs) });
   const brex = located.brex;
+  // 連鎖の終端の BREX では、親の BREX を見るよう案内しない（F-14）
+  const checkFurther = endsChain(brex)
+    ? 'This BREX ends the BREX chain (it has no parent BREX); check the project business rules document.'
+    : 'Check the parent BREX and the project business rules document.';
   const base: { notation: string; objectUse: string; ruleId?: string }[] = [];
   const baseExcluded: { notation: string; objectUse: string; ruleId?: string }[] = [];
   const perContext: Record<
@@ -268,9 +286,9 @@ async function listNotations(args: Args) {
       : undefined,
     _notes: notes(
       !restricts
-        ? 'This BREX has no notationRuleList, so it does not restrict illustration/multimedia formats. Check the parent BREX and the project business rules document.'
+        ? `This BREX has no notationRuleList, so it does not restrict illustration/multimedia formats. ${checkFurther}`
         : base.length === 0
-          ? 'This BREX has no base set (no notation with flag 1 outside a schema context). Notations it lists with flag 0 are excluded; other notations are not restricted by this BREX (S1000D Issue 7 Chap 4.10.2.2). Check the parent BREX and the project business rules document.'
+          ? `This BREX has no base set (no notation with flag 1 outside a schema context). Notations it lists with flag 0 are excluded; other notations are not restricted by this BREX (S1000D Issue 7 Chap 4.10.2.2). ${checkFurther}`
           : 'flag 1 = allowed in that context (redefines the set for that schema), flag 0 = excluded in that context. effectiveFor.mode: "closed" = only "allowed" may be used, "open" = only "excluded" are forbidden, "unrestricted" = this BREX does not restrict notations.',
     ),
   };
