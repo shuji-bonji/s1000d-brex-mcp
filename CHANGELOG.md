@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.0 (2026-11-24)
+
+### 追加
+
+- **すべてのツールの応答の最後に、`_server`（`name`・`version`・`core`）を足しました。** 答えたサーバーのパッケージ名と版、実際に読み込んでいる s1000d-core の版です。成功の応答、想定内の失敗（`{"error": …}`）、想定外の失敗（`isError: true`）のすべてに付きます。ホストが古いプロセスのまま動いているときに、応答から見分けるためです（hub の DECISIONS の D-38、Issue [shuji-bonji/s1000d-stack#12](https://github.com/shuji-bonji/s1000d-stack/issues/12)）。成功の応答の、これまでの項目と順番は変わりません。結果がオブジェクトでないときは `{"result": …, "_server": …}` にします。サーバーの instructions にも `_server` の意味を書きました。
+
+依存の `@shuji-bonji/s1000d-core` を `^0.17.0` に上げました（`CORE_INFO` を持つ版です）。
+
 ## 0.6.4 (2026-11-17)
 
 依存の `@shuji-bonji/s1000d-core` を `^0.13.0` に上げました。core 0.13.0 の変更は、既にあるデータモジュールの構造を変える編集（`editContent`）の追加です。このサーバーの動きは変わりません。
