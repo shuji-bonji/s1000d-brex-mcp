@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.0 (2026-11-24)
+
+### 変更（応答の項目名が変わります）
+
+- **`explain_brex`・`lookup_sns`・`lookup_value`・`list_notations` の注記を、`_note`（文字列）から `_notes`（文字列の配列）にしました。** ほかの 3 本の MCP と、このサーバーの `check_against_brex` と同じ形です。これまでは、存在しない `csdbDirs` のフォルダーを渡すと、サーバーがその注記を `_notes` に足すため、`_note` と `_notes` が同じ応答に並んでいました。今後は、どちらの注記も `_notes` に入ります。`lookup_sns` で該当する SNS が見つかったときは、空の配列です（[#2](https://github.com/shuji-bonji/s1000d-brex-mcp/issues/2)、hub の `eval/hosts/grok-build/reports/2026-11/FINDINGS.md` の F-10）。
+
 ## 0.7.0 (2026-11-24)
 
 ### 追加

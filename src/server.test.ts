@@ -139,6 +139,33 @@ describe('lookup_sns / lookup_value / list_notations', () => {
     expect(r.data.exact).toBe(false);
   });
 
+  it('注記は 4 つのツールとも _notes（配列）で返し、_note は返さない（F-10）', async () => {
+    const nowhere = join(tmpdir(), 's1000d-brex-mcp-no-such-csdb-notes');
+    const calls: Array<[string, Record<string, unknown>]> = [
+      ['explain_brex', { brex: projectBrex, limit: 1 }],
+      ['lookup_sns', { brex: projectBrex, dmc: 'KENBAIKI-A-10-20-00-00A-040A-D' }],
+      ['lookup_value', { brex: projectBrex, target: 'infoCode', value: '520' }],
+      ['list_notations', { brex: projectBrex }],
+    ];
+    for (const [name, args] of calls) {
+      const r = await call(name, args);
+      expect(r.data, name).not.toHaveProperty('_note');
+      expect(Array.isArray(r.data._notes), name).toBe(true);
+    }
+    // SNS が見つかったときは注記が無いので、空の配列
+    const sns = await call('lookup_sns', {
+      brex: projectBrex,
+      dmc: 'KENBAIKI-A-10-20-00-00A-040A-D',
+    });
+    expect(sns.data._notes).toEqual([]);
+    // 存在しないフォルダーの注記も、ツールの注記と同じ配列に入る（以前は _note と _notes が並んだ）
+    const both = await call('list_notations', { brex: projectBrex, csdbDirs: [fixtures, nowhere] });
+    expect(both.data).not.toHaveProperty('_note');
+    const notes = both.data._notes.join(' ');
+    expect(notes).toContain('flag 1 = allowed');
+    expect(notes).toContain(nowhere);
+  });
+
   it('値の意味と許可を返す', async () => {
     const ok = await call('lookup_value', { brex: projectBrex, target: 'infoCode', value: '520' });
     expect(ok.data.matches).toHaveLength(1);
@@ -147,7 +174,7 @@ describe('lookup_sns / lookup_value / list_notations', () => {
     expect(ng.data.matches[0].valueCheck.allowed).toBe(false);
     const none = await call('lookup_value', { brex: projectBrex, target: 'noSuchThing' });
     expect(none.data.matches).toEqual([]);
-    expect(none.data._note).toContain('does not restrict');
+    expect(none.data._notes.join(' ')).toContain('does not restrict');
   });
 
   it('NOTATION の基本セットと文脈別の差分', async () => {
@@ -179,7 +206,7 @@ describe('lookup_sns / lookup_value / list_notations', () => {
         allowed: null,
         excluded: ['PNG', 'CGM'],
       });
-      expect(r.data._note).toContain('not restricted by this BREX');
+      expect(r.data._notes.join(' ')).toContain('not restricted by this BREX');
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

@@ -37,6 +37,11 @@ import { ToolInputError } from '../errors.js';
 type Args = Record<string, any>;
 export type ToolHandler = (args: Args) => Promise<unknown>;
 
+/** 注記を `_notes`（配列）にする。ほかの 3 本の MCP と同じ形（F-10）。注記が無ければ空の配列 */
+function notes(...texts: Array<string | undefined>): string[] {
+  return texts.filter((t): t is string => typeof t === 'string' && t.length > 0);
+}
+
 function str(v: unknown): string | undefined {
   return typeof v === 'string' && v.trim() !== '' ? v.trim() : undefined;
 }
@@ -113,8 +118,9 @@ async function explainBrex(args: Args) {
     returned: page.length,
     nextOffset: offset + page.length < filtered.length ? offset + page.length : null,
     rules: page,
-    _note:
+    _notes: notes(
       'allowedObjectFlag: 0 = must not be used, 1 = must be present, 2 = optional (value restricted when values are listed). Rules of kind "nonContext" cannot be checked automatically. Severity codes (brslNN) are project-defined and not interpreted here.',
+    ),
   };
 }
 
@@ -155,11 +161,13 @@ async function lookupSnsTool(args: Args) {
     found: result !== undefined,
     exact: result?.exact ?? false,
     levels: result?.levels ?? [],
-    _note: hasSns
-      ? result
-        ? undefined
-        : 'This BREX defines SNS rules, but none matched the given codes.'
-      : 'This BREX has no snsRules; the SNS may be defined in a parent BREX or in a separate business rules document.',
+    _notes: notes(
+      hasSns
+        ? result
+          ? undefined
+          : 'This BREX defines SNS rules, but none matched the given codes.'
+        : 'This BREX has no snsRules; the SNS may be defined in a parent BREX or in a separate business rules document.',
+    ),
   };
 }
 
@@ -205,10 +213,11 @@ async function lookupValue(args: Args) {
     target,
     value,
     matches,
-    _note:
+    _notes: notes(
       matches.length === 0
         ? 'No rule in this BREX mentions the target. That means the BREX does not restrict it here; the XML schema may still constrain it, and a parent BREX may have rules.'
         : '"allowed: null" means the rule lists no value restriction (only usage/meaning).',
+    ),
   };
 }
 
@@ -257,11 +266,13 @@ async function listNotations(args: Args) {
           excluded: policy?.mode === 'open' ? [...policy.excluded] : [],
         }
       : undefined,
-    _note: !restricts
-      ? 'This BREX has no notationRuleList, so it does not restrict illustration/multimedia formats. Check the parent BREX and the project business rules document.'
-      : base.length === 0
-        ? 'This BREX has no base set (no notation with flag 1 outside a schema context). Notations it lists with flag 0 are excluded; other notations are not restricted by this BREX (S1000D Issue 7 Chap 4.10.2.2). Check the parent BREX and the project business rules document.'
-        : 'flag 1 = allowed in that context (redefines the set for that schema), flag 0 = excluded in that context. effectiveFor.mode: "closed" = only "allowed" may be used, "open" = only "excluded" are forbidden, "unrestricted" = this BREX does not restrict notations.',
+    _notes: notes(
+      !restricts
+        ? 'This BREX has no notationRuleList, so it does not restrict illustration/multimedia formats. Check the parent BREX and the project business rules document.'
+        : base.length === 0
+          ? 'This BREX has no base set (no notation with flag 1 outside a schema context). Notations it lists with flag 0 are excluded; other notations are not restricted by this BREX (S1000D Issue 7 Chap 4.10.2.2). Check the parent BREX and the project business rules document.'
+          : 'flag 1 = allowed in that context (redefines the set for that schema), flag 0 = excluded in that context. effectiveFor.mode: "closed" = only "allowed" may be used, "open" = only "excluded" are forbidden, "unrestricted" = this BREX does not restrict notations.',
+    ),
   };
 }
 
